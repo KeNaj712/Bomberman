@@ -37,6 +37,13 @@ int rayRange1=2;
 int rayRange2=2;
 bool EndOfGame = false;
 
+// images
+
+Texture2D explosion_tex;
+Texture2D rock_tex;
+Texture2D bomb_tex;
+
+
 Vector2 pair_double(Punkt p)
 {
     Vector2 c={p.x,p.y};
@@ -48,7 +55,20 @@ Punkt pair(int a,int b)
     Punkt c={a,b};
     return c;
 }
-
+void loadImages()
+{
+    Image obrazek = LoadImage("explosion.png");
+    ImageResize(&obrazek, blockSize, blockSize);
+    explosion_tex = LoadTextureFromImage(obrazek);
+    obrazek = LoadImage("rock.png");
+    ImageResize(&obrazek, blockSize-2, blockSize-2);
+    rock_tex = LoadTextureFromImage(obrazek);
+    obrazek = LoadImage("bomb.png");
+    ImageResize(&obrazek, blockSize, blockSize);
+    bomb_tex = LoadTextureFromImage(obrazek);
+    UnloadImage(obrazek);
+    
+}
 void initBlocks()
 {
     for(int x=0;x<15;x++)
@@ -289,16 +309,29 @@ void Rysuj()
             if(blockType[x][y]==1)
                 DrawRectangle(x*blockSize,y*blockSize,blockSize,blockSize,DARKGRAY);
             if(blockType[x][y]==2)
-                DrawRectangle(x*blockSize,y*blockSize,blockSize,blockSize,LIGHTGRAY);
+                DrawTexture(rock_tex, x*blockSize , y*blockSize , WHITE);
             if(blockType[x][y]==3)
-                DrawCircle(x*blockSize+blockSize/2,y*blockSize+blockSize/2,blockSize/2-5,BLACK);
+                DrawTexture(bomb_tex, x*blockSize , y*blockSize , WHITE);
             if(blockType[x][y]==4)
-                DrawCircle(x*blockSize+blockSize/2,y*blockSize+blockSize/2,blockSize/2-5,RED);
+                DrawTexture(explosion_tex, x*blockSize , y*blockSize , WHITE);
+                //DrawCircle(x*blockSize+blockSize/2,y*blockSize+blockSize/2,blockSize/2-5,RED);
         }
     DrawRectangle(player1Position.x,player1Position.y,playerSize,playerSize,BLUE);
     
     DrawRectangle(player2Position.x,player2Position.y,playerSize,playerSize,RED);
 
+    if(EndOfGame)
+    {
+        Punkt pos1=findNearest(pair(player1Position.x+playerSize/2,player1Position.y+playerSize/2)),pos2=findNearest(pair(player2Position.x+playerSize/2,player2Position.y+playerSize/2));
+        bool if1Lost=(blockType[pos1.x][pos1.y]==4),if2Lost=(blockType[pos2.x][pos2.y]==4);
+        if(if1Lost && !if2Lost)
+            DrawText(FormatText("PLAYER 2 WINS"), 40, 335, 85, GREEN);
+        if(!if1Lost && if2Lost)
+            DrawText(FormatText("PLAYER 1 WINS"), 50, 335, 85, GREEN);
+        if(if1Lost && if2Lost)
+            DrawText(FormatText("DRAW"), 190, 315, 130, GREEN);
+    }
+    
     EndDrawing();
 }
 
@@ -336,15 +369,18 @@ void DetectLose()
    bool if1Lost=(blockType[pos1.x][pos1.y]==4),if2Lost=(blockType[pos2.x][pos2.y]==4);
    if(if1Lost || if2Lost)
        EndOfGame = true;
+   
 }
 
 int main(void)
 {
+    InitWindow(screenWidth, screenHeight, "Bomberman");
     srand(time(0));
     initBlocks();
-
-    InitWindow(screenWidth, screenHeight, "Bomberman");
+    loadImages();
+    
     SetTargetFPS(60);
+    
     while (!WindowShouldClose())
     {
         if(!EndOfGame)
