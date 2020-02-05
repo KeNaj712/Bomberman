@@ -19,7 +19,6 @@ const int screenWidth = 750;
 const int screenHeight = 750;
 const int blockSize = 50;
 const int playerSize = 30;
-const int speed = 3;
 const int bombTime = 150;
 const int explosionTime = 60;
 
@@ -31,10 +30,14 @@ int blockType[16][16]; // 0 - puste | 1 - stały blok | 2 - blok do rozwalenia |
 int bombTimer[16][16];
 int whoseBomb[16][16];
 int explosionTimer[16][16];
-int player1Bombs=5;
-int player2Bombs=5;
-int rayRange1=2;
-int rayRange2=2;
+int bonus[16][16]; // 0 - brak | 1 - speed up | 2 - extra bomba | 3 - wiekszy zasieg wybuchu
+int player1Bombs=1;
+int player2Bombs=1;
+int player1Speed=2;
+int player2Speed=2;
+int rayRange1=1;
+int rayRange2=1;
+int LoseTimer;
 bool EndOfGame = false;
 
 // images
@@ -42,6 +45,9 @@ bool EndOfGame = false;
 Texture2D explosion_tex;
 Texture2D rock_tex;
 Texture2D bomb_tex;
+Texture2D rayRange_tex;
+Texture2D extraBomb_tex;
+Texture2D speedUp_tex;
 
 
 Vector2 pair_double(Punkt p)
@@ -61,13 +67,21 @@ void loadImages()
     ImageResize(&obrazek, blockSize, blockSize);
     explosion_tex = LoadTextureFromImage(obrazek);
     obrazek = LoadImage("rock.png");
-    ImageResize(&obrazek, blockSize-2, blockSize-2);
+    ImageResize(&obrazek, blockSize, blockSize);
     rock_tex = LoadTextureFromImage(obrazek);
     obrazek = LoadImage("bomb.png");
     ImageResize(&obrazek, blockSize, blockSize);
     bomb_tex = LoadTextureFromImage(obrazek);
+    obrazek = LoadImage("speedUp.png");
+    ImageResize(&obrazek, blockSize-10, blockSize-10);
+    speedUp_tex = LoadTextureFromImage(obrazek);
+    obrazek = LoadImage("plusRayRange.png");
+    ImageResize(&obrazek, blockSize-10, blockSize-10);
+    rayRange_tex = LoadTextureFromImage(obrazek);
+    obrazek = LoadImage("extraBomb.png");
+    ImageResize(&obrazek, blockSize-10, blockSize-10);
+    extraBomb_tex = LoadTextureFromImage(obrazek);
     UnloadImage(obrazek);
-    
 }
 void initBlocks()
 {
@@ -172,6 +186,9 @@ bool checkCollision(Punkt rect, Punkt change)
     return false;
    
 }
+
+void startExplosion(int x,int y,int who);
+
 void triggerExplosion(int x,int y,int ch_x,int ch_y,int cnt,int who)
 {
     if(cnt==0 || blockType[x][y]==1)
@@ -185,6 +202,8 @@ void triggerExplosion(int x,int y,int ch_x,int ch_y,int cnt,int who)
     }
     if(blockType[x][y]==2 || blockType[x][y]==5)
     {
+        if(blockType[x][y] == 2 && GetRandomValue(1,3) > 2)
+            bonus[x][y]=GetRandomValue(1,5)/2+1;
         blockType[x][y]=5;
         explosionTimer[x][y]=explosionTime;
         return;
@@ -218,27 +237,27 @@ void startExplosion(int x,int y,int who)
 }
 void movePlayer1()
 {
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player1Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_W) && !checkCollision( pair( player1Position.x , player1Position.y) , pair(0,-pom_speed) ) )
         {
             player1Position.y-=pom_speed;
             break;
         }            
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player1Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_S) && !checkCollision( pair( player1Position.x , player1Position.y) , pair(0,pom_speed) ) ) 
         {
             player1Position.y+=pom_speed;
             break;
         }
             
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player1Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_A) && !checkCollision( pair( player1Position.x , player1Position.y) , pair(-pom_speed,0) ) )
         {
             player1Position.x-=pom_speed;
             break;
         }            
             
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player1Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_D) && !checkCollision( pair( player1Position.x , player1Position.y) , pair(pom_speed,0) ) ) 
         {
             player1Position.x+=pom_speed;
@@ -259,27 +278,27 @@ void movePlayer1()
 
 void movePlayer2()
 {
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player2Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_UP) && !checkCollision( pair( player2Position.x , player2Position.y) , pair(0,-pom_speed) ) )
         {
             player2Position.y-=pom_speed;
             break;
         }            
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player2Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_DOWN) && !checkCollision( pair( player2Position.x , player2Position.y) , pair(0,pom_speed) ) ) 
         {
             player2Position.y+=pom_speed;
             break;
         }
             
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player2Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_LEFT) && !checkCollision( pair( player2Position.x , player2Position.y) , pair(-pom_speed,0) ) )
         {
             player2Position.x-=pom_speed;
             break;
         }            
             
-    for(int pom_speed=speed;pom_speed>0;pom_speed--)
+    for(int pom_speed=player2Speed;pom_speed>0;pom_speed--)
         if ( IsKeyDown(KEY_RIGHT) && !checkCollision( pair( player2Position.x , player2Position.y) , pair(pom_speed,0) ) ) 
         {
             player2Position.x+=pom_speed;
@@ -303,9 +322,17 @@ void Rysuj()
     BeginDrawing();
 
     ClearBackground(GRAY);
+    ClearBackground(GRAY);
+    
     for(int x=0;x<15;x++)
         for(int y=0;y<15;y++)
         {
+            if(bonus[x][y]==1)
+                DrawTexture(speedUp_tex, x*blockSize + 5, y*blockSize + 5, WHITE);
+            if(bonus[x][y]==2)
+                DrawTexture(extraBomb_tex, x*blockSize + 5, y*blockSize + 5, WHITE);
+            if(bonus[x][y]==3)
+                DrawTexture(rayRange_tex, x*blockSize + 5, y*blockSize + 5, WHITE);
             if(blockType[x][y]==1)
                 DrawRectangle(x*blockSize,y*blockSize,blockSize,blockSize,DARKGRAY);
             if(blockType[x][y]==2)
@@ -314,22 +341,25 @@ void Rysuj()
                 DrawTexture(bomb_tex, x*blockSize , y*blockSize , WHITE);
             if(blockType[x][y]==4)
                 DrawTexture(explosion_tex, x*blockSize , y*blockSize , WHITE);
-                //DrawCircle(x*blockSize+blockSize/2,y*blockSize+blockSize/2,blockSize/2-5,RED);
         }
+        
     DrawRectangle(player1Position.x,player1Position.y,playerSize,playerSize,BLUE);
     
     DrawRectangle(player2Position.x,player2Position.y,playerSize,playerSize,RED);
-
+    
     if(EndOfGame)
     {
         Punkt pos1=findNearest(pair(player1Position.x+playerSize/2,player1Position.y+playerSize/2)),pos2=findNearest(pair(player2Position.x+playerSize/2,player2Position.y+playerSize/2));
         bool if1Lost=(blockType[pos1.x][pos1.y]==4),if2Lost=(blockType[pos2.x][pos2.y]==4);
         if(if1Lost && !if2Lost)
-            DrawText(FormatText("PLAYER 2 WINS"), 40, 335, 85, GREEN);
+            DrawText(FormatText("PLAYER 2 WINS"), 40, 280, 85, GREEN);
         if(!if1Lost && if2Lost)
-            DrawText(FormatText("PLAYER 1 WINS"), 50, 335, 85, GREEN);
+            DrawText(FormatText("PLAYER 1 WINS"), 50, 280, 85, GREEN);
         if(if1Lost && if2Lost)
-            DrawText(FormatText("DRAW"), 190, 315, 130, GREEN);
+            DrawText(FormatText("DRAW"), 190, 300, 130, GREEN);
+        if((LoseTimer/30)%2 == 1 && LoseTimer > 60)
+            DrawText(FormatText("PRESS R TO RESTART"), 52, 500, 55, MAGENTA);
+        LoseTimer++;
     }
     
     EndDrawing();
@@ -346,23 +376,61 @@ void AfterMoveSimulation()
 {
     for(int x=0;x<15;x++)
         for(int y=0;y<15;y++)
-        {
             if(blockType[x][y]==3)
             {
                 bombTimer[x][y]--;
                 if(bombTimer[x][y]==0)
                     startExplosion(x,y,whoseBomb[x][y]);
             }
+    for(int x=0;x<15;x++)
+        for(int y=0;y<15;y++)   
             if(blockType[x][y]==4)
             {
                 explosionTimer[x][y]--;
                 if(explosionTimer[x][y]==0)
                     blockType[x][y]=0;
             }
-        }
     change5to4();
 }
-
+void detectBonuses()
+{
+    Punkt point=findNearest(pair(player1Position.x+playerSize/2,player1Position.y+playerSize/2));
+    if(bonus[point.x][point.y]==1)
+    {
+        bonus[point.x][point.y]=0;
+        if(player1Speed<5)
+            player1Speed++;
+    }
+    if(bonus[point.x][point.y]==2)
+    {
+        bonus[point.x][point.y]=0;
+        player1Bombs++;
+    }
+    if(bonus[point.x][point.y]==3)
+    {
+        bonus[point.x][point.y]=0;
+        rayRange1++;
+    }
+    
+    point=findNearest(pair(player2Position.x+playerSize/2,player2Position.y+playerSize/2));
+    if(bonus[point.x][point.y]==1)
+    {
+        bonus[point.x][point.y]=0;
+        if(player2Speed<5)
+            player2Speed++;
+    }
+    if(bonus[point.x][point.y]==2)
+    {
+        bonus[point.x][point.y]=0;
+        player2Bombs++;
+    }
+    if(bonus[point.x][point.y]==3)
+    {
+        bonus[point.x][point.y]=0;
+        rayRange2++;
+    }
+    
+}
 void DetectLose()
 {
    Punkt pos1=findNearest(pair(player1Position.x+playerSize/2,player1Position.y+playerSize/2)),pos2=findNearest(pair(player2Position.x+playerSize/2,player2Position.y+playerSize/2));
@@ -370,6 +438,38 @@ void DetectLose()
    if(if1Lost || if2Lost)
        EndOfGame = true;
    
+}
+
+void ClearEverything()
+{
+    player1Position = pair(60,60);
+    player2Position = pair(660,660);
+    for(int x=0;x<16;x++)
+        for(int y=0;y<16;y++)
+        {
+            blockType[x][y]=0;
+            bombTimer[x][y]=0;
+            whoseBomb[x][y]=0;
+            explosionTimer[x][y]=0;
+            bonus[x][y]=0;
+        }
+    player1Bombs=1;
+    player2Bombs=1;
+    player1Speed=2;
+    player2Speed=2;
+    rayRange1=1;
+    rayRange2=1;
+    LoseTimer=0;
+    EndOfGame = false;
+}
+
+void DetectRestart()
+{
+    if(EndOfGame && IsKeyDown(KEY_R))
+    {
+        ClearEverything();
+        initBlocks();
+    }
 }
 
 int main(void)
@@ -390,11 +490,14 @@ int main(void)
             movePlayer2();
         
             AfterMoveSimulation();
+            
+            detectBonuses();
         }
         Rysuj();
         
         DetectLose();
         
+        DetectRestart();
     }
     CloseWindow();
     return 0;
